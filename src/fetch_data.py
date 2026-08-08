@@ -115,8 +115,7 @@ def load_all_raw_csv() -> pd.DataFrame:
     return hourly
 
 
-def fetch_weather_history(start_date: str, end_date: str) -> pd.DataFrame:
-    """Open-Meteo Archive API から過去の実測気温・湿度を取得(キー不要)。"""
+def _fetch_weather_archive(start_date: str, end_date: str) -> pd.DataFrame:
     url = "https://archive-api.open-meteo.com/v1/archive"
     params = {
         "latitude": TOKYO_LAT,
@@ -136,6 +135,35 @@ def fetch_weather_history(start_date: str, end_date: str) -> pd.DataFrame:
             "humidity": js["relative_humidity_2m"],
         }
     )
+    return df
+
+
+def fetch_weather_history(start_date: str, end_date: str) -> pd.DataFrame:
+    """過去の気温・湿度を取得する。
+
+    Open-Meteoのアーカイブ(過去実測)APIは反映に数日のラグがあり、直近日を
+    end_dateに含めると400エラーになる。そのため直近分(概ね7日以内)は
+    Forecast APIのpast_daysオプションで代用し、両者を結合する。
+    """
+    start_ts = pd.Timestamp(start_date)
+    end_ts = pd.Timestamp(end_date)
+    now_jst = pd.Timestamp.now(tz="Asia/Tokyo").tz_localize(None).normalize()
+    archive_cutoff = now_jst - pd.Timedelta(days=7)
+
+    frames = []
+    if start_ts <= archive_cutoff:
+        archive_end = min(end_ts, archive_cutoff)
+        frames.append(_fetch_weather_archive(start_ts.strftime("%Y-%m-%d"), archive_end.strftime("%Y-%m-%d")))
+
+    if end_ts > archive_cutoff:
+        gap_start = max(start_ts, archive_cutoff + pd.Timedelta(days=1))
+        past_days = max((now_jst - gap_start).days + 1, 0)
+        recent = fetch_weather_forecast(days=1, past_days=past_days)
+        recent = recent[(recent["datetime"] >= gap_start) & (recent["datetime"] < end_ts + pd.Timedelta(days=1))]
+        frames.append(recent)
+
+    df = pd.concat(frames, ignore_index=True)
+    df = df.drop_duplicates(subset="datetime", keep="last").sort_values("datetime").reset_index(drop=True)
     return df
 
 
