@@ -1,0 +1,43 @@
+name: Weekly Retrain
+
+on:
+  schedule:
+    # 18:00 UTC(日曜) = 03:00 JST(月曜)
+    - cron: "0 18 * * 0"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install Japanese font (for plot labels)
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch full training window (14 months)
+        working-directory: src
+        run: python fetch_data.py --months-back 14
+
+      - name: Retrain model
+        working-directory: src
+        run: python train.py --test-days 30
+
+      - name: Commit retrained model
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add models/demand_model.joblib outputs/metrics.csv outputs/test_predictions.png
+          git diff --cached --quiet || git commit -m "chore: weekly model retrain $(date -u +'%Y-%m-%d')"
+          git push

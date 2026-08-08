@@ -1,0 +1,20 @@
+# 生データ・結合済みデータセット(再取得可能なので追跡しない)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# ローカル自動実行のログ
+logs/*
+!logs/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# エディタ・OS
+.vscode/
+.DS_Store
+Thumbs.db

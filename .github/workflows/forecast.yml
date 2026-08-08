@@ -1,0 +1,47 @@
+name: Daily Forecast
+
+on:
+  schedule:
+    # 16:30 UTC = 01:30 JST(翌日分の実績データが出そろうタイミング)
+    - cron: "30 16 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  forecast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch latest demand + weather data
+        working-directory: src
+        run: python fetch_data.py --months-back 2
+
+      - name: Run day-ahead forecast
+        working-directory: src
+        # このジョブは01:30 JSTに走る想定。予測モデルは「前日・前週同時刻の
+        # 実績需要」をラグ特徴量に使うため、対象日の前日が完全に終わっている
+        # 必要がある。01:30 JST時点では前日分が出そろっているので、
+        # 対象日は"実行時点のJST日付(today)"を明示的に指定する
+        # (predict.pyの既定「翌日」をそのまま使うと前日データがまだ無く失敗する)。
+        run: |
+          TARGET_DATE=$(TZ=Asia/Tokyo date +%Y-%m-%d)
+          python predict.py --date "$TARGET_DATE"
+
+      - name: Commit forecast output
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add outputs/forecast_*.csv
+          git diff --cached --quiet || git commit -m "chore: daily demand forecast $(date -u +'%Y-%m-%d')"
+          git push
