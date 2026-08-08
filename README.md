@@ -1,8 +1,8 @@
 # 電力需要予測モデル(TEPCOエリア・翌日24時間)
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
-[![Daily Forecast](https://github.com/OWNER/REPO/actions/workflows/forecast.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/forecast.yml)
-[![Weekly Retrain](https://github.com/OWNER/REPO/actions/workflows/retrain.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/retrain.yml)
+[![CI](https://github.com/saki-nya1539/tepco-demand-forecast/actions/workflows/ci.yml/badge.svg)](https://github.com/saki-nya1539/tepco-demand-forecast/actions/workflows/ci.yml)
+[![Daily Forecast](https://github.com/saki-nya1539/tepco-demand-forecast/actions/workflows/forecast.yml/badge.svg)](https://github.com/saki-nya1539/tepco-demand-forecast/actions/workflows/forecast.yml)
+[![Weekly Retrain](https://github.com/saki-nya1539/tepco-demand-forecast/actions/workflows/retrain.yml/badge.svg)](https://github.com/saki-nya1539/tepco-demand-forecast/actions/workflows/retrain.yml)
 
 東京電力パワーグリッド(TEPCO)エリアの電力需要を、翌日の時間別(24時間分)で予測するモデルです。
 
